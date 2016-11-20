@@ -94,6 +94,11 @@ void SPI_SET_UNIDIRECTIONAL()
 #else
 	#define XNOP()
 #endif
+#ifdef SOFTWARE_SPI
+
+void SPI_Init()
+{
+}
 
 void SPI_Write(uint8_t command)
 {
@@ -139,8 +144,37 @@ uint8_t SPI_Read(void)
 	}
 	return result;
 }
+#else
 
+#include <SPI.h>
+
+
+void SPI_Init()
+{
+  SPISettings s (4000000, MSBFIRST, SPI_MODE0);
+  SPI.beginTransaction(s);
+}
+
+
+uint8_t SPI_Write(uint8_t command) 
+{
+  return SPI.transfer(command);
+}
+
+// read one byte from MISO
+uint8_t SPI_Read()
+{
+    uint8_t result=0;
+    result = SPI.transfer(0x00);
+    return result;
+}
+
+
+#endif
 #ifdef A7105_INSTALLED
+#ifndef SOFTWARE_SPI
+#error This function has not been tested with hardware SPI.
+#endif
 uint8_t SPI_SDI_Read(void)
 {
 	uint8_t result=0;

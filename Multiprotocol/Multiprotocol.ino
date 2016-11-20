@@ -251,6 +251,8 @@ void setup()
 		
 		// Random
 		random_init();
+
+		SPI_Init();
 	#endif
 
 	// Set Chip selects
@@ -270,8 +272,10 @@ void setup()
 	#ifdef	STM32_BOARD
 		initSPI2();
 	#else
+		#ifdef SOFTWARE_SPI
 		SDI_on;
 		SCLK_off;
+		#endif
 	#endif
 
 	// Set servos positions

@@ -53,48 +53,80 @@
 	// PPM
 	#define PPM_pin	 3										//D3 = PD3
 	#define PPM_port PORTD
+	#endif
 
 	// SDIO
-	#define SDI_pin	 5										//D5 = PD5
-	#define SDI_port PORTD
-	#define SDI_ipr  PIND
-	#define SDI_ddr  DDRD
-	#ifdef ORANGE_TX
-		#define SDI_on	SDI_port.OUTSET = _BV(SDI_pin)
-		#define SDI_off SDI_port.OUTCLR = _BV(SDI_pin)
-	#else
-		#define SDI_on	SDI_port |= _BV(SDI_pin)
-		#define SDI_off	SDI_port &= ~_BV(SDI_pin)
-		#define SDI_1	(SDI_ipr & _BV(SDI_pin))
-		#define SDI_0	(SDI_ipr & _BV(SDI_pin)) == 0x00
-	#endif
-	#define SDI_input	SDI_ddr &= ~_BV(SDI_pin)
-	#define SDI_output	SDI_ddr |=  _BV(SDI_pin)
+	#define SOFTWARE_SPI // default is software. comment out to enable hardware spi
+	#ifdef SOFTWARE_SPI
+		#define SDI_pin  5                    //D5 = PD5
+		#define SDI_port PORTD
+		#define SDI_ipr  PIND
+		#define SDI_ddr  DDRD
+		#ifdef ORANGE_TX
+			#define SDI_on	SDI_port.OUTSET = _BV(SDI_pin)
+			#define SDI_off SDI_port.OUTCLR = _BV(SDI_pin)
+		#else
+			#define SDI_on	SDI_port |= _BV(SDI_pin)
+			#define SDI_off	SDI_port &= ~_BV(SDI_pin)
+			#define SDI_1	(SDI_ipr & _BV(SDI_pin))
+			#define SDI_0	(SDI_ipr & _BV(SDI_pin)) == 0x00
+		#endif
+		#define SDI_input	SDI_ddr &= ~_BV(SDI_pin)
+		#define SDI_output	SDI_ddr |=  _BV(SDI_pin)
+	
+		//SDO
+		#define SDO_pin   6                 //D6 = PD6
+		#define SDO_port  PORTD
+		#define SDO_ipr   PIND
+		#ifdef ORANGE_TX
+			#define SDO_1 (SDO_port.IN & _BV(SDO_pin))
+			#define SDO_0 (SDO_port.IN & _BV(SDO_pin)) == 0x00
+		#else
+			#define SDO_1 (SDO_ipr & _BV(SDO_pin))
+			#define SDO_0 (SDO_ipr & _BV(SDO_pin)) == 0x00
+		#endif
+	
+		// SCLK
 
-	//SDO
-	#define SDO_pin		6									//D6 = PD6
-	#define SDO_port	PORTD
-	#define SDO_ipr		PIND
-	#ifdef ORANGE_TX
-		#define SDO_1 (SDO_port.IN & _BV(SDO_pin))
-		#define SDO_0 (SDO_port.IN & _BV(SDO_pin)) == 0x00
+		#ifdef ORANGE_TX
+			#define SCLK_port PORTD
+			#define SCLK_ddr DDRD
+			#define SCLK_pin	7								//PD7
+			#define SCLK_on		SCLK_port.OUTSET = _BV(SCLK_pin)
+			#define SCLK_off	SCLK_port.OUTCLR = _BV(SCLK_pin)
+		#else
+		// SCLK
+			#define SCLK_port PORTD
+			#define SCLK_ddr DDRD
+			#define SCLK_pin  4               //D4 = PD4
+			#define SCLK_output	SCLK_ddr  |=  _BV(SCLK_pin)
+			#define SCLK_on		SCLK_port |=  _BV(SCLK_pin)
+			#define SCLK_off	SCLK_port &= ~_BV(SCLK_pin)
+		#endif
 	#else
-		#define SDO_1 (SDO_ipr & _BV(SDO_pin))
-		#define SDO_0 (SDO_ipr & _BV(SDO_pin)) == 0x00
-	#endif
-
-	// SCLK
-	#define SCLK_port PORTD
-	#define SCLK_ddr DDRD
-	#ifdef ORANGE_TX
-		#define SCLK_pin	7								//PD7
-		#define SCLK_on		SCLK_port.OUTSET = _BV(SCLK_pin)
-		#define SCLK_off	SCLK_port.OUTCLR = _BV(SCLK_pin)
-	#else
-		#define SCLK_pin	4								//D4 = PD4
-		#define SCLK_output	SCLK_ddr  |=  _BV(SCLK_pin)
-		#define SCLK_on		SCLK_port |=  _BV(SCLK_pin)
-		#define SCLK_off	SCLK_port &= ~_BV(SCLK_pin)
+		#ifdef ORANGE_TX
+			#error HARDWARE SPI NOT SUPPORTED on ORANGE_TX
+		#endif
+	
+		// hardware MOSI: 11, MISO 12, SCK 13
+		#define SDI_pin  3
+		#define SDI_port PORTB
+		#define SDI_ipr  PINB
+		#define SDI_ddr  DDRB
+	
+		#define SDI_output  SDI_ddr |=  _BV(SDI_pin)
+	
+		//SDO
+		#define SDO_pin   4
+		#define SDO_port  PORTB
+		#define SDO_ipr   PINB
+	
+	
+		// SCLK
+		#define SCLK_port PORTB
+		#define SCLK_ddr DDRB
+		#define SCLK_pin  5
+		#define SCLK_output SCLK_ddr  |=  _BV(SCLK_pin)
 	#endif
 
 	// A7105
