@@ -66,6 +66,13 @@
 	#undef	HONTAI_NRF24L01_INO
 #endif
 
+#if (defined(A7105_INSTALLED) && !defined(CYRF6936_INSTALLED) && !defined(CC2500_INSTALLED) && !defined(NRF24L01_INSTALLED)) || \
+    (!defined(A7105_INSTALLED) && defined(CYRF6936_INSTALLED) && !defined(CC2500_INSTALLED) && !defined(NRF24L01_INSTALLED)) || \
+    (!defined(A7105_INSTALLED) && !defined(CYRF6936_INSTALLED) && defined(CC2500_INSTALLED) && !defined(NRF24L01_INSTALLED)) || \
+    (!defined(A7105_INSTALLED) && !defined(CYRF6936_INSTALLED) && !defined(CC2500_INSTALLED) && defined(NRF24L01_INSTALLED))
+#define DISABLE_RF_SWITCH
+#endif
+
 //Make sure telemetry is selected correctly
 #ifndef TELEMETRY
 	#undef INVERT_TELEMETRY
@@ -80,7 +87,7 @@
 	#if not defined(FRSKYD_CC2500_INO) && not defined(HUBSAN_A7105_INO) && not defined(AFHDS2A_A7105_INO)
 		#undef HUB_TELEMETRY
 	#endif
-	#if not defined(FRSKYX_CC2500_INO)
+	#if not defined(FRSKYX_CC2500_INO) && (not defined(ENABLE_BAYANG_TELEMETRY) || not defined(BAYANG_NRF24L01_INO))
 		#undef SPORT_TELEMETRY
 	#endif
 	#if not defined(AFHDS2A_A7105_INO)

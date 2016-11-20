@@ -230,15 +230,19 @@ void setup()
 		#ifdef NRF24L01_INSTALLED
 			NRF_CSN_output;
 		#endif
+		#ifndef DISABLE_RF_SWITCH
 		PE1_output;
 		PE2_output;
+		#endif
 		SERIAL_TX_output;
 
 		// pullups
+		#ifdef ENABLE_PPM
 		MODE_DIAL1_port |= _BV(MODE_DIAL1_pin);
 		MODE_DIAL2_port |= _BV(MODE_DIAL2_pin);
 		MODE_DIAL3_port |= _BV(MODE_DIAL3_pin);
 		MODE_DIAL4_port |= _BV(MODE_DIAL4_pin);
+		#endif
 		BIND_port |= _BV(BIND_pin);
 
 		// Timer1 config
@@ -378,7 +382,7 @@ void loop()
 
 	while(1)
 	{
-		if(remote_callback==0 || diff>2*200)
+		if(next_callback==0 || remote_callback==NULL || diff>2*200)
 		{
 			do
 			{
@@ -412,6 +416,10 @@ void loop()
 			next_callback=remote_callback();
 			TX_MAIN_PAUSE_off;
 			tx_resume();
+			
+			if (0 == next_callback)
+				break; // process next callback ASAP (but also call Update_All)
+			
 			while(next_callback>4000)
 			{ // start to wait here as much as we can...
 				next_callback-=2000;				// We will wait below for 2ms
@@ -483,7 +491,11 @@ void Update_All()
 	#endif //ENABLE_PPM
 	update_led_status();
 	#if defined(TELEMETRY)
-		if((protocol==MODE_FRSKYD) || (protocol==MODE_HUBSAN) || (protocol==MODE_AFHDS2A) || (protocol==MODE_FRSKYX) || (protocol==MODE_DSM) )
+		if((protocol==MODE_FRSKYD) || (protocol==MODE_HUBSAN) || (protocol==MODE_AFHDS2A) || (protocol==MODE_FRSKYX) || (protocol==MODE_DSM) 
+		#ifdef ENABLE_BAYANG_TELEMETRY
+		|| (protocol==MODE_BAYANG)
+		#endif
+		)
 			TelemetryUpdate();
 	#endif
 }
@@ -963,12 +975,16 @@ void Mprotocol_serial_init()
 	#endif //ORANGE_TX
 }
 
-#if defined(TELEMETRY)
+#if defined(TELEMETRY) && defined(ENABLE_PPM)
 void PPM_Telemetry_serial_init()
 {
 	if( (protocol==MODE_FRSKYD) || (protocol==MODE_HUBSAN) || (protocol==MODE_AFHDS2A) )
 		initTXSerial( SPEED_9600 ) ;
-	if(protocol==MODE_FRSKYX)
+	if(protocol==MODE_FRSKYX
+	#ifdef ENABLE_BAYANG_TELEMETRY
+	|| protocol==MODE_BAYANG
+	#endif
+	)
 		initTXSerial( SPEED_57600 ) ;
 	if(protocol==MODE_DSM)
 		initTXSerial( SPEED_125K ) ;

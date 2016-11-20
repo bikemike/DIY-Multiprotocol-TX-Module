@@ -110,6 +110,9 @@
 #define HUB_TELEMETRY
 #define AFHDS2A_TELEMETRY
 
+// uncomment to enable bayang telemtry for H101 acro firmware - https://github.com/bikemike/H101-acro/tree/telemetry
+//#define ENABLE_BAYANG_TELEMETRY
+
 /****************************/
 /*** SERIAL MODE SETTINGS ***/
 /****************************/

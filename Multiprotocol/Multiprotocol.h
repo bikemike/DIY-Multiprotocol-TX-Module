@@ -138,6 +138,12 @@ enum HONTAI
 	FORMAT_X5C1		= 2
 };
 
+enum BAYANG
+{
+	BAYANG = 0,
+	BAYANG_TELEM = 1
+};
+
 #define NONE 		0
 #define P_HIGH		1
 #define P_LOW		0

@@ -33,20 +33,23 @@
 		#define DEBUG_TX_toggle
 	#endif
 
-	// Dial
-	#define MODE_DIAL1_pin	2
-	#define MODE_DIAL1_port	PORTB
-	#define MODE_DIAL1_ipr  PINB
-	#define MODE_DIAL2_pin	3
-	#define MODE_DIAL2_port	PORTB
-	#define MODE_DIAL2_ipr  PINB
-	#define MODE_DIAL3_pin	4
-	#define MODE_DIAL3_port	PORTB
-	#define MODE_DIAL3_ipr  PINB
-	#define MODE_DIAL4_pin	0
-	#define MODE_DIAL4_port	PORTC
-	#define MODE_DIAL4_ipr  PINC
+	#ifdef ENABLE_PPM
+		// Dial
+		#define MODE_DIAL1_pin	2
+		#define MODE_DIAL1_port	PORTB
+		#define MODE_DIAL1_ipr  PINB
+		#define MODE_DIAL2_pin	3
+		#define MODE_DIAL2_port	PORTB
+		#define MODE_DIAL2_ipr  PINB
+		#define MODE_DIAL3_pin	4
+		#define MODE_DIAL3_port	PORTB
+		#define MODE_DIAL3_ipr  PINB
+		#define MODE_DIAL4_pin	0
+		#define MODE_DIAL4_port	PORTC
+		#define MODE_DIAL4_ipr  PINC
+	#endif
 
+	#ifdef ENABLE_PPM
 	// PPM
 	#define PPM_pin	 3										//D3 = PD3
 	#define PPM_port PORTD
@@ -150,7 +153,7 @@
 	#endif
 
 	//RF Switch
-	#ifdef ORANGE_TX
+	#if defined ORANGE_TX || defined DISABLE_RF_SWITCH
 		#define PE1_on
 		#define PE1_off
 		#define PE2_on
