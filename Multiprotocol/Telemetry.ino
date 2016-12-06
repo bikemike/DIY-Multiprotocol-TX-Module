@@ -22,7 +22,10 @@
 	float    telemetry_voltage      = 0.f;
 	uint8_t  telemetry_rx_rssi      = 100;
 	#ifdef ENABLE_BAYANG_TELEMETRY
+	uint16_t telemetry_rx_recv_pps  = 100;
 	uint8_t  telemetry_tx_rssi      = 100;
+	uint16_t telemetry_tx_recv_pps  = 100;
+	uint16_t telemetry_tx_sent_pps  = 100;
 	uint8_t  telemetry_datamode     = 0;
 	uint8_t  telemetry_dataitem     = 0;
 	float    telemetry_data[3]      = {0};
@@ -455,12 +458,14 @@ void sportSendFrame()
 		case 12: // xjt t1
 			frame[2] = 0x02;
 			frame[3] = 0x00;
-			frame[4] = 0;
+			frame[4] = telemetry_tx_sent_pps >> 1; // divided by 2
+			frame[5] = telemetry_rx_recv_pps >> 1; // divided by 2
 			break;
 		case 13: // xjt t2
 			frame[2] = 0x05;
 			frame[3] = 0x00;
-			frame[4] = 0;
+			frame[4] = telemetry_tx_recv_pps >> 1; // divided by 2
+			frame[5] = 0;
 			break;
 #endif
 						

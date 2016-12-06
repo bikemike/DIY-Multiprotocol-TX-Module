@@ -31,11 +31,11 @@ void initSPI2()
 	SPI_2.setClockDivider(SPI_CLOCK_DIV8);	// Set the speed (36 / 8 = 4.5 MHz SPI_2 speed)
 }
 	
-void SPI_Write(uint8_t command)
+uint8_t SPI_Write(uint8_t command)
 {//working OK	
 	SPI2_BASE->DR = command;				//Write the first data item to be transmitted into the SPI_DR register (this clears the TXE flag).
 	while (!(SPI2_BASE->SR & SPI_SR_RXNE));
-	command = SPI2_BASE->DR;				// ... and read the last received data.
+	return SPI2_BASE->DR;				// ... and read the last received data.
 }
 
 uint8_t SPI_Read(void)
@@ -100,9 +100,9 @@ void SPI_Init()
 {
 }
 
-void SPI_Write(uint8_t command)
+uint8_t SPI_Write(uint8_t command)
 {
-	uint8_t n=8; 
+	uint8_t n=8, result=0; 
 
 	SCLK_off;//SCK start low
 	XNOP();
@@ -110,6 +110,10 @@ void SPI_Write(uint8_t command)
 	XNOP();
 	do
 	{
+		result=result<<1;
+		if(SDO_1)
+			result |= 0x01;
+			
 		if(command&0x80)
 			SDI_on;
 		else
@@ -124,6 +128,8 @@ void SPI_Write(uint8_t command)
 	}
 	while(--n) ;
 	SDI_on;
+	
+	return result;
 }
 
 uint8_t SPI_Read(void)

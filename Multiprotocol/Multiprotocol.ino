@@ -383,10 +383,11 @@ void setup()
 void loop()
 { 
 	uint16_t next_callback,diff=0xFFFF;
+	uint16_t next_callback=0,diff=0xFFFF;
 
 	while(1)
 	{
-		if(next_callback==0 || remote_callback==NULL || diff>2*200)
+		if(remote_callback==NULL || diff>2*200)
 		{
 			do
 			{
@@ -420,10 +421,7 @@ void loop()
 			next_callback=remote_callback();
 			TX_MAIN_PAUSE_off;
 			tx_resume();
-			
-			if (0 == next_callback)
-				break; // process next callback ASAP (but also call Update_All)
-			
+
 			while(next_callback>4000)
 			{ // start to wait here as much as we can...
 				next_callback-=2000;				// We will wait below for 2ms
