@@ -330,6 +330,87 @@ void sportIdle()
 	Serial_write(START_STOP);
 }	
 
+
+typedef struct _custom_telem_data
+{
+	uint8_t sensor_id_hi;
+	uint8_t sensor_id_lo;
+	uint8_t type; // int 
+	uint8_t precision;
+	void* data;
+} custom_telem_data;
+
+enum TELEM_DATATYPE
+{
+	TELEM_DATATYPE_UINT8,
+	TELEM_DATATYPE_UINT16,
+	TELEM_DATATYPE_UINT32,
+	TELEM_DATATYPE_INT32,
+	TELEM_DATATYPE_FLOAT,
+};
+
+
+static bool sportSendCustom(struct _custom_telem_data* custom_data, int idx, int len, uint8_t* frame_data)
+{
+	if (NULL == custom_data)
+		return false;
+
+	if (idx  < 0 || idx >= len)
+		return false;
+
+	uint32_t data = 0;
+	if (TELEM_DATATYPE_FLOAT == custom_data[idx].type)
+	{
+		data = (int32_t)((*(float*)custom_data[idx].data) * pow(10, custom_data[idx].precision));
+	}
+	else if (TELEM_DATATYPE_INT32 == custom_data[idx].type)
+	{
+		data = *(int32_t*)custom_data[idx].data * pow(10, custom_data[idx].precision);
+	}
+	else
+	{
+		if (TELEM_DATATYPE_UINT8 == custom_data[idx].type)
+		{
+			data = *(uint8_t*)custom_data[idx].data;
+		
+		}
+		else if (TELEM_DATATYPE_UINT16 == custom_data[idx].type)
+		{
+			data = *(uint16_t*)custom_data[idx].data;
+		}
+		else if (TELEM_DATATYPE_UINT32 == custom_data[idx].type)
+		{
+			data = *(uint32_t*)custom_data[idx].data;
+		}
+		data = data * pow(10, custom_data[idx].precision);
+	}
+	uint8_t* bytes = (uint8_t*)&data;
+	frame_data[2] = custom_data[idx].sensor_id_lo; // 0x01,0x02,...
+	frame_data[3] = custom_data[idx].sensor_id_hi; // 0x04
+	for (int i = 0; i < 4; ++i)
+		frame_data[4+i] = bytes[i];
+
+	return true;		
+}
+
+#ifdef ENABLE_BAYANG_TELEMETRY
+static custom_telem_data bayang_telem[] =
+{
+	{0x04, 0x00, TELEM_DATATYPE_UINT8,   0, &telemetry_tx_rssi},
+	{0x04, 0x01, TELEM_DATATYPE_UINT16,  0, &telemetry_tx_sent_pps},
+	{0x04, 0x02, TELEM_DATATYPE_UINT16,  0, &telemetry_rx_recv_pps},
+	{0x04, 0x03, TELEM_DATATYPE_UINT16,  0, &telemetry_tx_recv_pps},
+	{0x04, 0x04, TELEM_DATATYPE_UINT8,   0, &telemetry_datamode},
+	{0x04, 0x05, TELEM_DATATYPE_UINT8,   0, &telemetry_dataitem},
+	{0x04, 0x06, TELEM_DATATYPE_FLOAT,   4, &telemetry_data[0]},
+	{0x04, 0x07, TELEM_DATATYPE_FLOAT,   4, &telemetry_data[1]},
+	{0x04, 0x08, TELEM_DATATYPE_FLOAT,   4, &telemetry_data[2]},
+	{0x04, 0x09, TELEM_DATATYPE_UINT16,  0, &telemetry_uptime},
+	{0x04, 0x0A, TELEM_DATATYPE_UINT16,  0, &telemetry_flighttime},
+	{0x04, 0x0B, TELEM_DATATYPE_UINT8,   0, &telemetry_flightmode},
+};
+#endif
+
 void sportSendFrame()
 {
 	uint8_t i;
@@ -350,7 +431,7 @@ void sportSendFrame()
 #ifdef ENABLE_BAYANG_TELEMETRY
 	if (protocol == MODE_BAYANG)
 	{
-		num_frames = 14;
+		num_frames += sizeof(bayang_telem)/sizeof(bayang_telem[0]);;
 	}
 #endif
 
@@ -397,76 +478,6 @@ void sportSendFrame()
 			frame[6] = bytes[2];
 			frame[7] = bytes[3];
 			break;
-		case 4: //RPM (use this as vTX frequency)
-			frame[2] = 0x00;
-			frame[3] = 0x05;
-			frame[4] = 0;
-			frame[5] = 0;
-			frame[6] = 0;
-			frame[7] = 0;
-			//frskySerial.sendData(0x0500,temp);
-			break;
-		case 5: // xjt accx
-			frame[2] = 0x24;
-			frame[3] = 0x00;
-			temp16 = (uint16_t)(telemetry_data[0]*1000);
-			bytes = (uint8_t *) &temp16;
-			frame[4] = bytes[0];
-			frame[5] = bytes[1];
-			break;
-		case 6: // xjt accy
-			frame[2] = 0x25;
-			frame[3] = 0x00;
-			temp16 = (uint16_t)(telemetry_data[1]*1000);
-			bytes = (uint8_t *) &temp16;
-			frame[4] = bytes[0];
-			frame[5] = bytes[1];
-			break;
-		case 7: // xjt accz
-			frame[2] = 0x26;
-			frame[3] = 0x00;
-			temp16 = (uint16_t)(telemetry_data[2]*1000);
-			bytes = (uint8_t *) &temp16;
-			frame[4] = bytes[0];
-			frame[5] = bytes[1];
-			break;
-		case 8: // xjt gps hour minute
-			frame[2] = 0x17;
-			frame[3] = 0x00;
-			temp16 = telemetry_dataitem;            // hours
-			temp16 |= (telemetry_uptime / 60) << 8; // minutes
-			bytes = (uint8_t *) &temp16;
-			frame[4] = bytes[0];
-			frame[5] = bytes[1];
-			break;
-		case 9: // xjt gps seconds
-			frame[2] = 0x18;
-			frame[3] = 0x00;
-			frame[4] = telemetry_uptime % 60;
-			break;
-		case 10: // xjt gps day/month
-			frame[2] = 0x15;
-			frame[3] = 0x00;
-			frame[4] = telemetry_flighttime / 60;
-			frame[5] = telemetry_flighttime % 60;
-			break;
-		case 11: // xjt gps year
-			frame[2] = 0x16;
-			frame[3] = 0x00;
-			frame[4] = telemetry_flightmode;
-			break;
-		case 12: // xjt t1
-			frame[2] = 0x02;
-			frame[3] = 0x00;
-			frame[4] = telemetry_tx_sent_pps >> 1; // divided by 2
-			frame[5] = telemetry_rx_recv_pps >> 1; // divided by 2
-			break;
-		case 13: // xjt t2
-			frame[2] = 0x05;
-			frame[3] = 0x00;
-			frame[4] = telemetry_tx_recv_pps >> 1; // divided by 2
-			frame[5] = 0;
-			break;
 #endif
 						
 		default:
@@ -479,8 +490,17 @@ void sportSendFrame()
 			}
 			else
 			{
-				sportIdle();
-				return;
+				custom_telem_data* custom_data = NULL;
+				int len = 0;
+#ifdef ENABLE_BAYANG_TELEMETRY
+				custom_data = bayang_telem;
+				len = sizeof(bayang_telem)/sizeof(bayang_telem[0]);
+#endif
+				if (!sportSendCustom(bayang_telem, sport_counter-4, len, frame))
+				{
+					sportIdle();
+					return;
+				}
 			}		
 	}
 	sportSend(frame);

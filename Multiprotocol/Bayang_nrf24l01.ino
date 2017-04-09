@@ -396,7 +396,7 @@ uint8_t BAYANG_recv_packet()
 				
 				telemetry_flightmode = packet[7] & 0x3; // 0 = level, 1 = acro,
 				telemetry_datamode   = (packet[7] >> 2) & 0xF;  // (0=acro yaw, 1=acro roll/acro pitch, 2=level roll/pitch)
-				telemetry_dataitem   = (packet[7] >> 6) & 0x3;  // (0=acro yaw, 1=acro roll/acro pitch, 2=level roll/pitch)
+				telemetry_dataitem   = (packet[7] >> 6) & 0x3;  // current data item to edit
 				
 				v.bytes[0] = packet[8];
 				v.bytes[1] = packet[9];

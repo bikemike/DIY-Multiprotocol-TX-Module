@@ -382,7 +382,6 @@ void setup()
 // Protocol scheduler
 void loop()
 { 
-	uint16_t next_callback,diff=0xFFFF;
 	uint16_t next_callback=0,diff=0xFFFF;
 
 	while(1)
