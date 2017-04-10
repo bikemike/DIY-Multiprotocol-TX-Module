@@ -14,6 +14,13 @@
  */
 
 //******************
+// Version
+//******************
+#define VERSION_MAJOR		1
+#define VERSION_MINOR		1
+#define VERSION_REVISION	6
+#define VERSION_PATCH_LEVEL	21
+//******************
 // Protocols
 //******************
 enum PROTOCOLS
@@ -47,6 +54,11 @@ enum PROTOCOLS
 	MODE_HONTAI		= 26,	// =>NRF24L01
 	MODE_OPENLRS	= 27,	// =>OpenLRS hardware
 	MODE_AFHDS2A	= 28,	// =>A7105
+	MODE_Q2X2		= 29,	// =>NRF24L01, extension of CX-10 protocol
+	MODE_WK2x01		= 30,	// =>CYRF6936
+	MODE_Q303		= 31,	// =>NRF24L01
+	MODE_GW008		= 32,	// =>NRF24L01
+	MODE_DM002		= 33,	// =>NRF24L01
 };
 
 enum Flysky
@@ -54,7 +66,8 @@ enum Flysky
 	Flysky	= 0,
 	V9X9	= 1,
 	V6X6	= 2,
-	V912	= 3
+	V912	= 3,
+	CX20	= 4
 };
 enum AFHDS2A
 {
@@ -94,16 +107,25 @@ enum SYMAX
 	SYMAX	= 0,
 	SYMAX5C	= 1
 };
+enum SLT
+{
+	SLT		= 0,
+	VISTA	= 1
+};
 enum CX10
 {
-    CX10_GREEN	= 0,
-    CX10_BLUE	= 1,	// also compatible with CX10-A, CX12
-    DM007		= 2,
-	Q282		= 3,
+	CX10_GREEN	= 0,
+	CX10_BLUE	= 1,	// also compatible with CX10-A, CX12
+	DM007		= 2,
 	JC3015_1	= 4,
 	JC3015_2	= 5,
 	MK33041		= 6,
-	Q242		= 7
+};
+enum Q2X2
+{
+	Q222		= 8,
+	Q242		= 9,
+	Q282		= 10,
 };
 enum CG023
 {
@@ -111,12 +133,19 @@ enum CG023
     YD829	= 1,
     H8_3D	= 2
 };
+enum BAYANG
+{
+    BAYANG	= 0,
+    H8S3D	= 1,
+    BAYANG_TELEM = 2,
+};
 enum MT99XX
 {
 	MT99	= 0,
 	H7		= 1,
 	YZ		= 2,
-	LS		= 3
+	LS		= 3,
+	FY805	= 4
 };
 enum MJXQ
 {
@@ -124,24 +153,48 @@ enum MJXQ
 	X600	= 1,
 	X800	= 2,
 	H26D	= 3,
-	E010	= 4
+	E010	= 4,
+	H26WH	= 5,
 };
 enum FRSKYX
 {
 	CH_16	= 0,
 	CH_8	= 1,
+	EU_16	= 2,
+	EU_8	= 3,
 };
 enum HONTAI
 {
 	FORMAT_HONTAI	= 0,
 	FORMAT_JJRCX1	= 1,
-	FORMAT_X5C1		= 2
+	FORMAT_X5C1		= 2,
+	FORMAT_FQ777_951 =3
 };
-
-enum BAYANG
+enum V2X2
 {
-	BAYANG = 0,
-	BAYANG_TELEM = 1
+	V2X2	= 0,
+	JXD506	= 1,
+};
+enum FY326
+{
+	FY326	= 0,
+	FY319	= 1,
+};
+enum WK2x01
+{
+	WK2801	= 0,
+	WK2401	= 1,
+	W6_5_1	= 2,
+	W6_6_1	= 3,
+	W6_HEL	= 4,
+	W6_HEL_I= 5,
+};
+enum Q303
+{
+	Q303	= 0,
+	CX35	= 1,
+	CX10D	= 2,
+	CX10WD	= 3,
 };
 
 #define NONE 		0
@@ -159,6 +212,18 @@ struct PPM_Parameters
 	uint8_t autobind : 1;
 	uint8_t option;
 };
+
+// Telemetry
+
+enum MultiPacketTypes {
+    MULTI_TELEMETRY_STATUS  = 1,
+    MULTI_TELEMETRY_SPORT   = 2,
+    MULTI_TELEMETRY_HUB     = 3,
+    MULTI_TELEMETRY_DSM     = 4,
+    MULTI_TELEMETRY_DSMBIND = 5,
+    MULTI_TELEMETRY_AFHDS2A = 6,
+};
+
 
 // Macros
 #define NOP() __asm__ __volatile__("nop")
@@ -217,27 +282,47 @@ struct PPM_Parameters
 #define TX_RX_PAUSE_on		protocol_flags2 |= _BV(4)
 #define IS_TX_RX_PAUSE_on	( ( protocol_flags2 & _BV(4) ) !=0 )
 #define IS_TX_PAUSE_on		( ( protocol_flags2 & (_BV(4)|_BV(3)) ) !=0 )
+//Signal OK
+#define INPUT_SIGNAL_off	protocol_flags2 &= ~_BV(5)
+#define INPUT_SIGNAL_on		protocol_flags2 |= _BV(5)
+#define IS_INPUT_SIGNAL_on	( ( protocol_flags2 & _BV(5) ) !=0 )
+#define IS_INPUT_SIGNAL_off	( ( protocol_flags2 & _BV(5) ) ==0 )
+//Bind from channel
+#define BIND_CH_PREV_off	protocol_flags2 &= ~_BV(6)
+#define BIND_CH_PREV_on		protocol_flags2 |= _BV(6)
+#define IS_BIND_CH_PREV_on	( ( protocol_flags2 & _BV(6) ) !=0 )
+#define IS_BIND_CH_PREV_off	( ( protocol_flags2 & _BV(6) ) ==0 )
+//Wait for bind
+#define WAIT_BIND_off		protocol_flags2 &= ~_BV(7)
+#define WAIT_BIND_on		protocol_flags2 |= _BV(7)
+#define IS_WAIT_BIND_on		( ( protocol_flags2 & _BV(7) ) !=0 )
+#define IS_WAIT_BIND_off	( ( protocol_flags2 & _BV(7) ) ==0 )
+
 
 //********************
 //*** Blink timing ***
 //********************
 #define BLINK_BIND_TIME				100
 #define BLINK_SERIAL_TIME			500
-#define BLINK_BAD_PROTO_TIME_LOW	1000
+#define BLINK_PPM_TIME				1000
 #define BLINK_BAD_PROTO_TIME_HIGH	50
+#define BLINK_BAD_PROTO_TIME_LOW	1000
+#define BLINK_WAIT_BIND_TIME_HIGH	1000
+#define BLINK_WAIT_BIND_TIME_LOW	100
+
 
 //*******************
 //***  AUX flags  ***
 //*******************
 #define GET_FLAG(ch, mask) ( ch ? mask : 0)
-#define Servo_AUX1	Servo_AUX & _BV(0)
-#define Servo_AUX2	Servo_AUX & _BV(1)
-#define Servo_AUX3	Servo_AUX & _BV(2)
-#define Servo_AUX4	Servo_AUX & _BV(3)
-#define Servo_AUX5	Servo_AUX & _BV(4)
-#define Servo_AUX6	Servo_AUX & _BV(5)
-#define Servo_AUX7	Servo_AUX & _BV(6)
-#define Servo_AUX8	Servo_AUX & _BV(7)
+#define Servo_AUX1	(Servo_AUX & _BV(0))
+#define Servo_AUX2	(Servo_AUX & _BV(1))
+#define Servo_AUX3	(Servo_AUX & _BV(2))
+#define Servo_AUX4	(Servo_AUX & _BV(3))
+#define Servo_AUX5	(Servo_AUX & _BV(4))
+#define Servo_AUX6	(Servo_AUX & _BV(5))
+#define Servo_AUX7	(Servo_AUX & _BV(6))
+#define Servo_AUX8	(Servo_AUX & _BV(7))
 
 //************************
 //***  Power settings  ***
@@ -393,6 +478,11 @@ Serial: 100000 Baud 8e2      _ xxxx xxxx p --
 					HONTAI		26
 					OpenLRS		27
 					AFHDS2A		28
+					Q2X2		29
+					WK2x01		30
+					Q303		31
+					GW008		32
+					DM002		33
    BindBit=>		0x80	1=Bind/0=No
    AutoBindBit=>	0x40	1=Yes /0=No
    RangeCheck=>		0x20	1=Yes /0=No
@@ -404,6 +494,7 @@ Serial: 100000 Baud 8e2      _ xxxx xxxx p --
 			V9x9		1
 			V6x6		2
 			V912		3
+			CX20		4
 		sub_protocol==Hisky
 			Hisky		0
 			HK310		1
@@ -412,6 +503,7 @@ Serial: 100000 Baud 8e2      _ xxxx xxxx p --
 			DSM2_11 	1
 			DSMX_22 	2
 			DSMX_11 	3
+			DSM_AUTO	4
 		sub_protocol==YD717
 			YD717		0
 			SKYWLKR		1
@@ -428,41 +520,74 @@ Serial: 100000 Baud 8e2      _ xxxx xxxx p --
 			CX10_GREEN	0
 			CX10_BLUE	1	// also compatible with CX10-A, CX12
 			DM007		2
-			Q282		3
+			---			3
 			JC3015_1	4
 			JC3015_2	5
 			MK33041		6
-			Q242		7
+		sub_protocol==Q2X2
+			Q222		0
+			Q242		1
+			Q282		2
+		sub_protocol==SLT
+			SLT			0
+			VISTA		1
 		sub_protocol==CG023
 			CG023		0
 			YD829		1
 			H8_3D		2
+		sub_protocol==BAYANG
+			BAYANG		0
+			H8S3D		1
 		sub_protocol==MT99XX
 			MT99		0
 			H7			1
 			YZ			2
 			LS			3
+			FY805		4
 		sub_protocol==MJXQ
 			WLH08		0
 			X600		1
 			X800		2
 			H26D		3
 			E010		4
+			H26WH		5
 		sub_protocol==FRSKYX
 			CH_16		0
 			CH_8		1
+			EU_16		2
+			EU_8		3
 		sub_protocol==HONTAI
 			FORMAT_HONTAI	0
 			FORMAT_JJRCX1	1
 			FORMAT_X5C1		2
+			FORMAT_FQ777_951 3
 		sub_protocol==AFHDS2A
 			PWM_IBUS	0
 			PPM_IBUS	1
 			PWM_SBUS	2
 			PPM_SBUS	3
+		sub_protocol==V2X2
+			V2X2		0
+			JXD506		1
+		sub_protocol==FY326
+			FY326		0
+			FY319		1
+		sub_protocol==WK2x01
+			WK2801		0
+			WK2401		1
+			W6_5_1		2
+			W6_6_1		3
+			W6_HEL		4
+			W6_HEL_I	5
+		sub_protocol==Q303
+			Q303		0
+			CX35		1
+			CX10D		2
+			CX10WD		3
+
    Power value => 0x80	0=High/1=Low
   Stream[3]   = option_protocol;
-   option_protocol value is -127..127
+   option_protocol value is -128..127
   Stream[4] to [25] = Channels
    16 Channels on 11 bits (0..2047)
 	0		-125%
@@ -471,4 +596,87 @@ Serial: 100000 Baud 8e2      _ xxxx xxxx p --
 	1843	+100%
 	2047	+125%
    Channels bits are concatenated to fit in 22 bytes like in SBUS protocol
+*/
+/*
+  Multimodule Status
+  Based on #define MULTI_STATUS
+
+  Serial: 100000 Baud 8e2 (same as input)
+
+  Format: header (2 bytes) + data (variable)
+   [0] = 'M' (0x4d)
+   [1] Length (excluding the 2 header bytes)
+   [2-xx] data
+
+  Type = 0x01 Multimodule Status:
+   [2] Flags
+   0x01 = Input signal detected
+   0x02 = Serial mode enabled
+   0x04 = protocol is valid
+   0x08 = module is in binding mode
+   0x10 = module waits a bind event to load the protocol
+   [3] major
+   [4] minor
+   [5] revision
+   [6] patchlevel,
+   version of multi code, should be displayed as major.minor.revision.patchlevel
+*/
+/*
+  Multiprotocol telemetry definition for OpenTX
+  Based on #define MULTI_TELEMETRY enables OpenTX to get the multimodule status and select the correct telemetry type automatically.
+
+  Serial: 100000 Baud 8e2 (same as input)
+
+  TLV Protocol (type, length, value), allows a TX to ignore unknown messages
+
+  Format: header (4 byte) + data (variable)
+   [0] = 'M' (0x4d)
+   [1] = 'P' (0x50)
+
+   The first byte is deliberatly chosen to be different from other telemetry protocols
+   (e.g. 0xAA for DSM/Multi, 0xAA for FlySky and 0x7e for Frsky) to allow a TX to detect
+   the telemetry format of older versions
+
+   [2] Type (see below)
+   [3] Length (excluding the 4 header bytes)
+
+   [4-xx] data
+
+  Type = 0x01 Multimodule Status:
+   [4] Flags
+   0x01 = Input signal detected
+   0x02 = Serial mode enabled
+   0x04 = protocol is valid
+   0x08 = module is in binding mode
+   0x10 = module waits a bind event to load the protocol
+   [5] major
+   [6] minor
+   [7] revision
+   [8] patchlevel,
+   version of multi code, should be displayed as major.minor.revision.patchlevel
+
+   more information can be added by specifing a longer length of the type, the TX will just ignore these bytes
+
+
+  Type 0x02 Frksy S.port telemetry
+  Type 0x03 Frsky Hub telemetry
+
+	*No* usual frsky byte stuffing and without start/stop byte (0x7e)
+
+
+  Type 0x04 Spektrum telemetry data
+   data[0] RSSI
+   data[1-15] telemetry data
+
+  Type 0x05 DSM bind data
+	data[0-16] DSM bind data
+
+    technically DSM bind data is only 10 bytes but multi send 16
+    like with telemtry, check length field)
+
+  Type 0x06 Flysky AFHDS2 telemetry data
+   length: 29
+   data[0] = RSSI value
+   data[1-28] telemetry data
+
 */

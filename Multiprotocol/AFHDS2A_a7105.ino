@@ -1,4 +1,4 @@
-/*
+ /*
  This project is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -72,7 +72,7 @@ static void AFHDS2A_calc_channels()
 	}
 }
 
-#if defined(TELEMETRY)
+#if defined(AFHDS2A_FW_TELEMETRY) || defined(AFHDS2A_HUB_TELEMETRY)
 // telemetry sensors ID
 enum{
 	AFHDS2A_SENSOR_RX_VOLTAGE   = 0x00,
@@ -86,8 +86,9 @@ static void AFHDS2A_update_telemetry()
 {
 	// AA | TXID | rx_id | sensor id | sensor # | value 16 bit big endian | sensor id ......
 	// max 7 sensors per packet
-#if defined AFHDS2A_TELEMETRY
-    if (option & 0x80) {
+#ifdef AFHDS2A_FW_TELEMETRY
+    if (option & 0x80)
+	{
         // forward telemetry to TX, skip rx and tx id to save space
         pkt[0]= TX_RSSI;
         for(int i=9;i < AFHDS2A_RXPACKET_SIZE; i++)
@@ -96,21 +97,24 @@ static void AFHDS2A_update_telemetry()
         telemetry_link=2;
         return;
     }
-#endif    
+#endif
+#ifdef AFHDS2A_HUB_TELEMETRY
 	for(uint8_t sensor=0; sensor<7; sensor++)
 	{
+        // Send FrSkyD telemetry to TX
 		uint8_t index = 9+(4*sensor);
 		switch(packet[index])
 		{
 			case AFHDS2A_SENSOR_RX_VOLTAGE:
-				v_lipo = packet[index+3]<<8 | packet[index+2];
+				//v_lipo1 = packet[index+3]<<8 | packet[index+2];
+				v_lipo1 = packet[index+2];
 				telemetry_link=1;
 				break;
-			/*case AFHDS2A_SENSOR_RX_ERR_RATE:
-				// packet[index+2];
-				break;*/
+			case AFHDS2A_SENSOR_RX_ERR_RATE:
+				RX_LQI=packet[index+2];
+				break;
 			case AFHDS2A_SENSOR_RX_RSSI:
-				RSSI_dBm = -packet[index+2];
+				RX_RSSI = -packet[index+2];
 				break;
 			case 0xff:
 				return;
@@ -119,6 +123,7 @@ static void AFHDS2A_update_telemetry()
 				break;*/
 		}
 	}
+#endif
 }
 #endif
 
@@ -255,7 +260,7 @@ uint16_t ReadAFHDS2A()
 			while ((uint16_t)micros()-start < 700)			// Wait max 700µs, using serial+telemetry exit in about 120µs
 				if(!(A7105_ReadReg(A7105_00_MODE) & 0x01))
 					break;
-			A7105_SetTxRxMode(RX_EN);
+			A7105_SetTxRxMode(TXRX_OFF);					// Turn LNA off since we are in near range and we want to prevent swamping
 			A7105_Strobe(A7105_RX);
 			phase &= ~AFHDS2A_WAIT_WRITE;
 			phase++;
@@ -298,7 +303,7 @@ uint16_t ReadAFHDS2A()
 				{
 					if(packet[9] == 0xfc)
 						packet_type=AFHDS2A_PACKET_SETTINGS;	// RX is asking for settings
-					#if defined(TELEMETRY)
+					#if defined(AFHDS2A_FW_TELEMETRY) || defined(AFHDS2A_HUB_TELEMETRY)
 					else
 					{
 						// Read TX RSSI
@@ -346,6 +351,9 @@ uint16_t initAFHDS2A()
 			rx_id[i]=eeprom_read_byte((EE_ADDR)(temp+i));
 	}
 	hopping_frequency_no = 0;
+#if defined(AFHDS2A_FW_TELEMETRY) || defined(AFHDS2A_HUB_TELEMETRY)
+	init_frskyd_link_telemetry();
+#endif
 	return 50000;
 }
 #endif

@@ -22,8 +22,11 @@
 #ifdef ORANGE_TX
 	#undef ENABLE_PPM			// Disable PPM for OrangeTX module
 	#undef A7105_INSTALLED		// Disable A7105 for OrangeTX module
+	#undef A7105_CSN_pin
 	#undef CC2500_INSTALLED		// Disable CC2500 for OrangeTX module
+	#undef CC25_CSN_pin
 	#undef NRF24L01_INSTALLED	// Disable NRF for OrangeTX module
+	#undef NRF_CSN_pin
 	#define TELEMETRY			// Enable telemetry
 	#define INVERT_TELEMETRY	// Enable invert telemetry
 	#define DSM_TELEMETRY		// Enable DSM telemetry
@@ -39,6 +42,7 @@
 	#undef	DEVO_CYRF6936_INO
 	#undef	DSM_CYRF6936_INO
 	#undef	J6PRO_CYRF6936_INO
+	#undef	WK2x01_CYRF6936_INO
 #endif
 #ifndef CC2500_INSTALLED
 	#undef	FRSKYD_CC2500_INO
@@ -64,6 +68,9 @@
 	#undef	FQ777_NRF24L01_INO
 	#undef	ASSAN_NRF24L01_INO
 	#undef	HONTAI_NRF24L01_INO
+	#undef	Q303_NRF24L01_INO
+	#undef	GW008_NRF24L01_INO
+	#undef	DM002_NRF24L01_INO
 #endif
 
 #if (defined(A7105_INSTALLED) && !defined(CYRF6936_INSTALLED) && !defined(CC2500_INSTALLED) && !defined(NRF24L01_INSTALLED)) || \
@@ -76,24 +83,39 @@
 //Make sure telemetry is selected correctly
 #ifndef TELEMETRY
 	#undef INVERT_TELEMETRY
-	#undef DSM_TELEMETRY	
-	#undef SPORT_TELEMETRY	
+	#undef AFHDS2A_FW_TELEMETRY
+	#undef AFHDS2A_HUB_TELEMETRY
+	#undef BAYANG_HUB_TELEMETRY
+	#undef HUBSAN_HUB_TELEMETRY
 	#undef HUB_TELEMETRY
-	#undef AFHDS2A_TELEMETRY
+	#undef SPORT_TELEMETRY
+	#undef DSM_TELEMETRY
+	#undef MULTI_STATUS
+	#undef MULTI_TELEMETRY
 #else
-	#if not defined(DSM_CYRF6936_INO)
-		#undef DSM_TELEMETRY
+	#if defined MULTI_TELEMETRY && not defined INVERT_TELEMETRY
+		#warning MULTI_TELEMETRY has been defined but not INVERT_TELEMETRY. They should be both enabled for OpenTX telemetry and status to work.
 	#endif
-	#if not defined(FRSKYD_CC2500_INO) && not defined(HUBSAN_A7105_INO) && not defined(AFHDS2A_A7105_INO)
+	#if not defined(BAYANG_NRF24L01_INO)
+		#undef BAYANG_HUB_TELEMETRY
+	#endif
+	#if not defined(HUBSAN_A7105_INO)
+		#undef HUBSAN_HUB_TELEMETRY
+	#endif
+	#if not defined(AFHDS2A_A7105_INO)
+		#undef 	AFHDS2A_HUB_TELEMETRY
+		#undef 	AFHDS2A_FW_TELEMETRY
+	#endif
+	#if not defined(FRSKYD_CC2500_INO)
 		#undef HUB_TELEMETRY
 	#endif
 	#if not defined(FRSKYX_CC2500_INO) && (not defined(ENABLE_BAYANG_TELEMETRY) || not defined(BAYANG_NRF24L01_INO))
 		#undef SPORT_TELEMETRY
 	#endif
-	#if not defined(AFHDS2A_A7105_INO)
-		#undef 	AFHDS2A_TELEMETRY
+	#if not defined(DSM_CYRF6936_INO)
+		#undef DSM_TELEMETRY
 	#endif
-	#if not defined(DSM_TELEMETRY) && not defined(HUB_TELEMETRY) && not defined(SPORT_TELEMETRY) && not defined(AFHDS2A_TELEMETRY)
+	#if not defined(DSM_TELEMETRY) && not defined(SPORT_TELEMETRY) && not defined(HUB_TELEMETRY) && not defined(HUBSAN_HUB_TELEMETRY) && not defined(BAYANG_HUB_TELEMETRY) && not defined(AFHDS2A_HUB_TELEMETRY) && not defined(AFHDS2A_FW_TELEMETRY) && not defined(MULTI_TELEMETRY) && not defined(MULTI_STATUS)
 		#undef TELEMETRY
 		#undef INVERT_TELEMETRY
 	#endif
@@ -105,4 +127,26 @@
 #endif
 #if not defined(PPM_MAX_100) || not defined(PPM_MIN_100) || not defined(PPM_MAX_125) || not defined(PPM_MIN_125)
 	#error You must set correct TX end points.
+#endif
+
+#if defined(ENABLE_BIND_CH)
+	#if BIND_CH<4
+		#error BIND_CH must be above 4.
+	#endif
+	#if BIND_CH>16
+		#error BIND_CH must be below or equal to 16.
+	#endif
+#endif
+
+#if MIN_PPM_CHANNELS>16
+	#error MIN_PPM_CHANNELS must be below or equal to 16. The default for this value is 4.
+#endif
+#if MIN_PPM_CHANNELS<2
+	#error MIN_PPM_CHANNELS must be larger than 1. The default for this value is 4.
+#endif
+#if MAX_PPM_CHANNELS<MIN_PPM_CHANNELS
+	#error MAX_PPM_CHANNELS must be higher than MIN_PPM_CHANNELS. The default for this value is 16.
+#endif
+#if MAX_PPM_CHANNELS>16
+	#error MAX_PPM_CHANNELS must be below or equal to 16. The default for this value is 16.
 #endif
