@@ -32,13 +32,13 @@ uint8_t RetrySequence ;
 	uint8_t RxBt = 0;
 	uint8_t sport = 0;
 
+	#ifdef BAYANG_BIKEMIKE_TELEMETRY
 	float    telemetry_voltage      = 0.f;
-	uint8_t  telemetry_rx_rssi      = 100;
-	uint8_t  telemetry_tx_rssi      = 100;
-	#ifdef ENABLE_BAYANG_TELEMETRY
-	uint16_t telemetry_rx_recv_pps  = 100;
-	uint16_t telemetry_tx_recv_pps  = 100;
-	uint16_t telemetry_tx_sent_pps  = 100;
+	uint8_t  telemetry_rx_rssi      = 0;
+	uint8_t  telemetry_tx_rssi      = 0;
+	uint16_t telemetry_rx_recv_pps  = 0;
+	uint16_t telemetry_tx_recv_pps  = 0;
+	uint16_t telemetry_tx_sent_pps  = 0;
 	uint8_t  telemetry_datamode     = 0;
 	uint8_t  telemetry_dataitem     = 0;
 	float    telemetry_data[3]      = {0};
@@ -380,6 +380,34 @@ pkt[6]|(counter++)|00 01 02 03 04 05 06 07 08 09
 0x34	0x0A	0xC3	0x56	0xF3
 				
 		*/
+void sportInit()
+{
+	telemetry_lost=1;
+	telemetry_link=0;
+	telemetry_counter=0;
+	RX_RSSI=0;
+	TX_RSSI=0;
+	RX_LQI=0;
+	TX_LQI=0;
+
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
+	telemetry_voltage      = 0.f;
+	telemetry_rx_rssi      = 0;
+	telemetry_tx_rssi      = 0;
+	telemetry_rx_recv_pps  = 0;
+	telemetry_tx_recv_pps  = 0;
+	telemetry_tx_sent_pps  = 0;
+	telemetry_datamode     = 0;
+	telemetry_dataitem     = 0;
+	telemetry_data[0]      = 0.f;
+	telemetry_data[1]      = 0.f;
+	telemetry_data[2]      = 0.f;
+	telemetry_uptime       = 0;
+	telemetry_flighttime   = 0;
+	telemetry_flightmode   = 0;
+#endif
+}
+
 #ifdef MULTI_TELEMETRY
 	void sportSend(uint8_t *p)
 	{
@@ -499,7 +527,7 @@ static bool sportSendCustom(struct _custom_telem_data* custom_data, int idx, int
 	return true;		
 }
 
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 static custom_telem_data bayang_telem[] =
 {
 	{0x04, 0x00, TELEM_DATATYPE_UINT8,   0, &telemetry_tx_rssi},
@@ -528,7 +556,7 @@ void sportSendFrame()
 	}
 	
 	uint8_t num_frames = 6;
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 	if (protocol == MODE_BAYANG)
 	{
 		num_frames += sizeof(bayang_telem)/sizeof(bayang_telem[0]);;
@@ -558,21 +586,37 @@ void sportSendFrame()
 		case 1: // RSSI
 			frame[2] = 0x01;
 			frame[3] = 0xf1;
-			frame[4] = telemetry_rx_rssi;
-			frame[5] = telemetry_tx_rssi;
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
+			if (protocol == MODE_BAYANG)
+			{
+				frame[4] = telemetry_rx_rssi;
+				frame[5] = telemetry_tx_rssi;
+			}
+			else
+			{
+				frame[4] = RX_RSSI;
+				frame[5] = TX_RSSI;
+			}
+#else
+			frame[4] = RX_RSSI;
+			frame[5] = TX_RSSI;
+#endif
 			frame[6] = RX_LQI;
 			frame[7] = TX_LQI;
 			break;
 		case 2: //BATT
 			frame[2] = 0x04;
 			frame[3] = 0xf1;
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 			if (protocol == MODE_BAYANG)
 				frame[4] = telemetry_voltage/4.f * 255.f/3.3f;//a1;
 			else
-				frame[4] = telemetry_voltage;
-
+				frame[4] = RxBt;
+#else
+				frame[4] = RxBt;
+#endif
 			break;
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 		case 3: //FCS VOLTAGE
 			frame[2] = 0x10;
 			frame[3] = 0x02;
@@ -597,7 +641,7 @@ void sportSendFrame()
 			{
 				custom_telem_data* custom_data = NULL;
 				int len = 0;
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 				custom_data = bayang_telem;
 				len = sizeof(bayang_telem)/sizeof(bayang_telem[0]);
 #endif
@@ -702,17 +746,17 @@ void TelemetryUpdate()
 	 
 	#if defined SPORT_TELEMETRY
 		if (protocol==MODE_FRSKYX
-			#ifdef ENABLE_BAYANG_TELEMETRY
-			|| protocol == MODE_BAYANG
+			#ifdef BAYANG_BIKEMIKE_TELEMETRY
+			|| (protocol == MODE_BAYANG && 2 == option)
 			#endif
 		)
 		{	// FrSkyX
 			if(telemetry_link)
 			{		
 				if(pktt[4] & 0x80)
-					telemetry_rx_rssi=pktt[4] & 0x7F ;
+					RX_RSSI=pktt[4] & 0x7F ;
 				else 
-					telemetry_voltage = (pktt[4]<<1) + 1 ;
+					RxBt = (pktt[4]<<1) + 1 ;
 				if(pktt[6] && pktt[6]<=6)
 					for (uint8_t i=0; i < pktt[6]; i++)
 						proces_sport_data(pktt[7+i]);
@@ -748,7 +792,11 @@ void TelemetryUpdate()
 		}
     #endif        
 
-		if((telemetry_link & 1 )&& protocol != MODE_FRSKYX)
+		if((telemetry_link & 1 ) && protocol != MODE_FRSKYX 
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
+			&& !(protocol == MODE_BAYANG && 2 == option)
+#endif
+		)
 		{	// FrSkyD + Hubsan + AFHDS2A + Bayang
 			frsky_link_frame();
 			return;

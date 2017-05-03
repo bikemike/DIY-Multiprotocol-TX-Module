@@ -19,18 +19,19 @@ Multiprotocol is distributed in the hope that it will be useful,
 
 #include "iface_nrf24l01.h"
 
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 #if defined(SOFTWARE_SPI)
-#define BAYANG_PACKET_PERIOD_TELEM    3200
+#define BAYANG_PACKET_PERIOD_BIKEMIKE_TELEM  3200
 #else
-#define BAYANG_PACKET_PERIOD_TELEM	3000
+#define BAYANG_PACKET_PERIOD_BIKEMIKE_TELEM	 3000
 #endif
 uint32_t bayang_telemetry_last_rx = 0;
 #endif
 
 
 #define BAYANG_BIND_COUNT		1000
-#define BAYANG_PACKET_PERIOD	1000
+#define BAYANG_PACKET_PERIOD	2000
+#define BAYANG_PACKET_PERIOD_HUB_TELEM	1000
 #define BAYANG_INITIAL_WAIT		500
 #define BAYANG_PACKET_SIZE		15
 #define BAYANG_RF_NUM_CHANNELS	4
@@ -41,7 +42,7 @@ enum BAYANG_FLAGS {
     // flags going to packet[2]
     BAYANG_FLAG_RTH			= 0x01,
     BAYANG_FLAG_HEADLESS	= 0x02,
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 	BAYANG_FLAG_TELEMETRY = 0x04,
 #endif
     BAYANG_FLAG_FLIP		= 0x08,
@@ -49,7 +50,7 @@ enum BAYANG_FLAGS {
     BAYANG_FLAG_PICTURE		= 0x20, 
     // flags going to packet[3]
     BAYANG_FLAG_INVERTED	= 0x80, // inverted flight on Floureon H101
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
     BAYANG_FLAG_FLIGHT_MODE0 = 0x01,
     BAYANG_FLAG_FLIGHT_MODE1 = 0x02,
     BAYANG_FLAG_DATA_SELECT0 = 0x04,
@@ -67,7 +68,7 @@ static void __attribute__((unused)) BAYANG_send_packet(uint8_t bind)
 	if (bind)
 	{
 	#ifdef BAYANG_HUB_TELEMETRY
-		if(sub_protocol != BAYANG_TELEM && option)
+		if(1 == option)
 			packet[0]= 0xA3;	// telemetry is enabled
 		else
 	#endif
@@ -82,9 +83,8 @@ static void __attribute__((unused)) BAYANG_send_packet(uint8_t bind)
 	else
 	{
 
-		int telem_enabled = 0;
-#ifdef ENABLE_BAYANG_TELEMETRY
-		telem_enabled = (sub_protocol == BAYANG_TELEM);
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
+		int bikemike_telem_enabled = (2 == option);
 		// telem_enabled &= Servo_AUX8; // enable telem with a switch
 #endif
 		uint16_t val;
@@ -104,8 +104,8 @@ static void __attribute__((unused)) BAYANG_send_packet(uint8_t bind)
 		if(Servo_AUX5)
 			packet[2] |= BAYANG_FLAG_HEADLESS;
 
-#ifdef ENABLE_BAYANG_TELEMETRY
-		if (telem_enabled)
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
+		if (bikemike_telem_enabled)
 		{
 			packet[2] |= BAYANG_FLAG_TELEMETRY;
 		}
@@ -117,8 +117,8 @@ static void __attribute__((unused)) BAYANG_send_packet(uint8_t bind)
 		if(Servo_AUX6)
 			packet[3] = BAYANG_FLAG_INVERTED;
 
-#ifdef ENABLE_BAYANG_TELEMETRY
-		if (telem_enabled)
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
+		if (bikemike_telem_enabled)
 		{
 			static uint8_t dataselect = 2;
 			uint8_t dataselect_old = dataselect;
@@ -232,21 +232,14 @@ static void __attribute__((unused)) BAYANG_send_packet(uint8_t bind)
     for (uint8_t i=0; i < BAYANG_PACKET_SIZE-1; i++)
 		packet[14] += packet[i];
 
-	// Power on, TX mode, 2byte CRC
-	// Why CRC0? xn297 does not interpret it - either 16-bit CRC or nothing
-	XN297_Configure(_BV(NRF24L01_00_EN_CRC) | _BV(NRF24L01_00_CRCO) | _BV(NRF24L01_00_PWR_UP));
 
 	NRF24L01_WriteReg(NRF24L01_05_RF_CH, bind ? BAYANG_RF_BIND_CHANNEL:hopping_frequency[hopping_frequency_no++]);
 	hopping_frequency_no%=BAYANG_RF_NUM_CHANNELS;
-
-	// clear packet status bits and TX FIFO
-	NRF24L01_WriteReg(NRF24L01_07_STATUS, 0x70);
-	NRF24L01_FlushTx();
-
+			
 	XN297_WritePayload(packet, BAYANG_PACKET_SIZE);
 
 	#ifdef BAYANG_HUB_TELEMETRY
-    if (option && sub_protocol != BAYANG_TELEM)
+    if (1 == option)
 	{	// switch radio to rx as soon as packet is sent
  		while (!(NRF24L01_ReadReg(NRF24L01_07_STATUS) & _BV(NRF24L01_07_TX_DS)));
 		NRF24L01_WriteReg(NRF24L01_00_CONFIG, 0x03);
@@ -313,8 +306,37 @@ uint16_t BAYANG_callback()
 {
 	if(IS_BIND_DONE_on)
 	{
-#ifdef ENABLE_BAYANG_TELEMETRY
-		if(sub_protocol == BAYANG_TELEM)
+#ifdef BAYANG_HUB_TELEMETRY
+		if (1 == option)
+		{
+			if(packet_count==0)
+			{
+				XN297_Configure(_BV(NRF24L01_00_EN_CRC) | _BV(NRF24L01_00_CRCO) | _BV(NRF24L01_00_PWR_UP));	
+				NRF24L01_WriteReg(NRF24L01_07_STATUS, 0x70);
+				NRF24L01_FlushRx();
+				BAYANG_send_packet(0);
+			}
+
+			packet_count++;
+			state++;
+
+			if (state > 1000)
+			{
+				//calculate telemetry reception packet rate - packets per 1000ms
+				TX_RSSI = telemetry_counter;
+				telemetry_counter = 0;
+				state = 0;
+				telemetry_lost=0;
+			}
+
+			if (packet_count > 1)
+				BAYANG_check_rx();
+
+			packet_count %= 5;
+		} else
+#endif
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
+		if(2 == option)
 		{
 			return Bayang_process();
 		}
@@ -326,11 +348,15 @@ uint16_t BAYANG_callback()
 	}
 	else
 	{
+		XN297_Configure(_BV(NRF24L01_00_EN_CRC) | _BV(NRF24L01_00_CRCO) | _BV(NRF24L01_00_PWR_UP));
+		NRF24L01_WriteReg(NRF24L01_07_STATUS, 0x70);
+		NRF24L01_FlushRx();
+			
 		if (bind_counter == 0)
 		{
 			XN297_SetTXAddr(rx_tx_addr, BAYANG_ADDRESS_LENGTH);
-			#if defined (ENABLE_BAYANG_TELEMETRY) || defined(BAYANG_HUB_TELEMETRY)
-			if(sub_protocol == BAYANG_TELEM || option)	
+			#if defined (BAYANG_BIKEMIKE_TELEMETRY) || defined(BAYANG_HUB_TELEMETRY)
+			if(1 == option || 2 == option)	
 				XN297_SetRXAddr(rx_tx_addr, BAYANG_ADDRESS_LENGTH);
 			#endif
 			BIND_DONE;
@@ -338,17 +364,28 @@ uint16_t BAYANG_callback()
 		else
 		{
 			#ifdef BAYANG_HUB_TELEMETRY
-			if(packet_count==0)
-				BAYANG_send_packet(1);
-			packet_count++;
-			packet_count%=4;
-			bind_counter--;
-			#else
-			BAYANG_send_packet(1);
-			bind_counter--;
+			if (1 == option)
+			{
+				if(packet_count==0)
+					BAYANG_send_packet(1);
+				packet_count++;
+				packet_count%=4;
+				bind_counter--;
+			}
+			else
 			#endif
+			{
+				BAYANG_send_packet(1);
+				bind_counter--;
+			}
 		}
 	}
+
+	#ifdef BAYANG_HUB_TELEMETRY
+	if (1 == option)
+		return BAYANG_PACKET_PERIOD_HUB_TELEM;
+	#endif
+
 	return BAYANG_PACKET_PERIOD;
 }
 
@@ -373,11 +410,14 @@ uint16_t initBAYANG(void)
 	init_frskyd_link_telemetry();
 	telemetry_lost=1;	// do not send telemetry to TX right away until we have a TX_RSSI value to prevent warning message...
 #endif
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
+	sportInit();
+#endif
 	return BAYANG_INITIAL_WAIT+BAYANG_PACKET_PERIOD;
 }
 
 
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 extern float    telemetry_voltage;
 extern uint16_t  telemetry_rx_recv_pps;
 extern uint16_t  telemetry_tx_recv_pps;
@@ -399,7 +439,7 @@ uint32_t telemetry_tx_recv_pps_time;
 
 
 
-#ifdef ENABLE_BAYANG_TELEMETRY
+#ifdef BAYANG_BIKEMIKE_TELEMETRY
 
 
 static uint32_t bayang_tx_time = 0;
@@ -555,7 +595,7 @@ uint16_t Bayang_process()
 
 		BAYANG_send_packet(0);
 		Bayang_state = BAYANG_STATE_TRANSMITTING;
-		Bayang_next_send = time_micros + BAYANG_PACKET_PERIOD_TELEM;
+		Bayang_next_send = time_micros + BAYANG_PACKET_PERIOD_BIKEMIKE_TELEM;
 		callback_period = 600; // takes about 1ms to send(spi transfer + tx send)
 
 		telemetry_tx_sent_pkt_count++;
@@ -575,7 +615,7 @@ uint16_t Bayang_process()
 	return callback_period;
 }
 
-#endif //ENABLE_BAYANG_TELEMETRY
+#endif //BAYANG_BIKEMIKE_TELEMETRY
 
 
 

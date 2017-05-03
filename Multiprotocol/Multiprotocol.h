@@ -136,8 +136,7 @@ enum CG023
 enum BAYANG
 {
     BAYANG	= 0,
-    H8S3D	= 1,
-    BAYANG_TELEM = 2,
+    H8S3D	= 1
 };
 enum MT99XX
 {

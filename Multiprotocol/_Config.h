@@ -165,11 +165,8 @@
 #define HUB_TELEMETRY				// Use FrSkyD Hub format to send telemetry to TX
 #define AFHDS2A_HUB_TELEMETRY		// Use FrSkyD Hub format to send telemetry to TX
 #define BAYANG_HUB_TELEMETRY		// Use FrSkyD Hub format to send telemetry to TX
+#define BAYANG_BIKEMIKE_TELEMETRY   // https://github.com/bikemike/H101-acro/tree/telemetry
 #define HUBSAN_HUB_TELEMETRY		// Use FrSkyD Hub format to send telemetry to TX
-
-
-// uncomment to enable bayang telemtry for H101 acro firmware - https://github.com/bikemike/H101-acro/tree/telemetry
-//#define ENABLE_BAYANG_TELEMETRY
 
 /****************************/
 /*** SERIAL MODE SETTINGS ***/

@@ -1148,11 +1148,7 @@ void PPM_Telemetry_serial_init()
 {
 	if( (protocol==MODE_FRSKYD) || (protocol==MODE_HUBSAN) || (protocol==MODE_AFHDS2A) || (protocol==MODE_BAYANG) )
 		initTXSerial( SPEED_9600 ) ;
-	if(protocol==MODE_FRSKYX
-	#ifdef ENABLE_BAYANG_TELEMETRY
-	|| protocol==MODE_BAYANG
-	#endif
-	)
+	if(protocol==MODE_FRSKYX)
 		initTXSerial( SPEED_57600 ) ;
 	if(protocol==MODE_DSM)
 		initTXSerial( SPEED_125K ) ;

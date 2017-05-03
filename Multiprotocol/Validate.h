@@ -86,6 +86,7 @@
 	#undef AFHDS2A_FW_TELEMETRY
 	#undef AFHDS2A_HUB_TELEMETRY
 	#undef BAYANG_HUB_TELEMETRY
+	#undef BAYANG_BIKEMIKE_TELEMETRY
 	#undef HUBSAN_HUB_TELEMETRY
 	#undef HUB_TELEMETRY
 	#undef SPORT_TELEMETRY
@@ -98,6 +99,7 @@
 	#endif
 	#if not defined(BAYANG_NRF24L01_INO)
 		#undef BAYANG_HUB_TELEMETRY
+		#undef BAYANG_BIKEMIKE_TELEMETRY
 	#endif
 	#if not defined(HUBSAN_A7105_INO)
 		#undef HUBSAN_HUB_TELEMETRY
@@ -106,18 +108,27 @@
 		#undef 	AFHDS2A_HUB_TELEMETRY
 		#undef 	AFHDS2A_FW_TELEMETRY
 	#endif
-	#if not defined(FRSKYD_CC2500_INO)
+	#if not defined(FRSKYD_CC2500_INO) && not defined (BAYANG_HUB_TELEMETRY)
 		#undef HUB_TELEMETRY
 	#endif
-	#if not defined(FRSKYX_CC2500_INO) && (not defined(ENABLE_BAYANG_TELEMETRY) || not defined(BAYANG_NRF24L01_INO))
+	#if not defined(FRSKYX_CC2500_INO) && not defined (BAYANG_BIKEMIKE_TELEMETRY)
 		#undef SPORT_TELEMETRY
 	#endif
 	#if not defined(DSM_CYRF6936_INO)
 		#undef DSM_TELEMETRY
 	#endif
-	#if not defined(DSM_TELEMETRY) && not defined(SPORT_TELEMETRY) && not defined(HUB_TELEMETRY) && not defined(HUBSAN_HUB_TELEMETRY) && not defined(BAYANG_HUB_TELEMETRY) && not defined(AFHDS2A_HUB_TELEMETRY) && not defined(AFHDS2A_FW_TELEMETRY) && not defined(MULTI_TELEMETRY) && not defined(MULTI_STATUS)
+	#if not defined(DSM_TELEMETRY) && not defined(SPORT_TELEMETRY) && not defined(HUB_TELEMETRY) && not defined(HUBSAN_HUB_TELEMETRY) && not defined(BAYANG_HUB_TELEMETRY) && not defined(BAYANG_BIKEMIKE_TELEMETRY) && not defined(AFHDS2A_HUB_TELEMETRY) && not defined(AFHDS2A_FW_TELEMETRY) && not defined(MULTI_TELEMETRY) && not defined(MULTI_STATUS)
 		#undef TELEMETRY
 		#undef INVERT_TELEMETRY
+	#endif
+	#if defined BAYANG_BIKEMIKE_TELEMETRY && not defined SPORT_TELEMETRY
+	#error BAYANG_BIKEMIKE_TELEMETRY requires SPORT_TELEMETRY but SPORT_TELEMETRY is not defined in _Config.h
+	#endif
+	#if defined BAYANG_BIKEMIKE_TELEMETRY && not defined MULTI_TELEMETRY
+	#error BAYANG_BIKEMIKE_TELEMETRY requires MULTI_TELEMETRY but MULTI_TELEMETRY is not defined in _Config.h
+	#endif
+	#if defined BAYANG_HUB_TELEMETRY && not defined HUB_TELEMETRY
+	#error BAYANG_HUB_TELEMETRY requires HUB_TELEMETRY but HUB_TELEMETRY is not defined in _Config.h
 	#endif
 #endif
 
