@@ -57,9 +57,9 @@
 //If a chip is not installed all associated protocols are disabled.
 //4-in-1 modules have all RF chips installed
 //!!!If a RF chip is present it MUST be marked as installed!!! or weird things will happen you have been warned.
-#define A7105_INSTALLED
-#define CYRF6936_INSTALLED
-#define CC2500_INSTALLED
+//#define A7105_INSTALLED
+//#define CYRF6936_INSTALLED
+//#define CC2500_INSTALLED
 #define NRF24L01_INSTALLED
 
 //Low power is reducing the transmit power of the multi module. This setting is configurable per model in PPM (table below) or Serial mode (radio GUI).
@@ -120,16 +120,16 @@
 #define	HISKY_NRF24L01_INO
 #define	KN_NRF24L01_INO
 #define	SLT_NRF24L01_INO
-#define	SYMAX_NRF24L01_INO
+//#define	SYMAX_NRF24L01_INO
 #define	V2X2_NRF24L01_INO
 #define	YD717_NRF24L01_INO
 #define	MT99XX_NRF24L01_INO
-#define	MJXQ_NRF24L01_INO
-#define	SHENQI_NRF24L01_INO
+//#define	MJXQ_NRF24L01_INO
+//#define	SHENQI_NRF24L01_INO
 #define	FY326_NRF24L01_INO
 #define	FQ777_NRF24L01_INO
-#define	ASSAN_NRF24L01_INO
-#define	HONTAI_NRF24L01_INO
+//#define	ASSAN_NRF24L01_INO
+//#define	HONTAI_NRF24L01_INO
 #define Q303_NRF24L01_INO
 #define GW008_NRF24L01_INO
 #define DM002_NRF24L01_INO
@@ -148,22 +148,22 @@
 //On a 9XR_PRO running ersky9x both commented and uncommented will work depending on the radio setting Invert COM1 under the Telemetry menu.
 //On other addon/replacement boards like the 9xtreme board or the Ar9x board running ersky9x, you need to uncomment the line below.
 //For er9x it depends if you have an inveter mod or not on the telemetry pin. If you don't have an inverter comment this line.
-//#define INVERT_TELEMETRY
+#define INVERT_TELEMETRY
 
 //Comment if you don't want to send Multi status telemetry frames (Protocol available, Bind in progress, version...)
 //Use with er9x/erksy9x, for OpenTX MULTI_TELEMETRY below is preferred instead
-#define MULTI_STATUS
+//#define MULTI_STATUS
 
 //Uncomment to send Multi status and allow OpenTX to autodetect the telemetry format
 //Supported by OpenTX version 2.2 RC9 and newer. NOT supported by er9x/ersky9x use MULTI_STATUS instead.
-//#define MULTI_TELEMETRY
+#define MULTI_TELEMETRY
 
 //Comment a line to disable a specific protocol telemetry
-#define DSM_TELEMETRY				// Forward received telemetry packet directly to TX to be decoded
+//#define DSM_TELEMETRY				// Forward received telemetry packet directly to TX to be decoded
 #define SPORT_TELEMETRY				// Use FrSkyX SPORT format to send telemetry to TX
-#define AFHDS2A_FW_TELEMETRY		// Forward received telemetry packet directly to TX to be decoded
+//#define AFHDS2A_FW_TELEMETRY		// Forward received telemetry packet directly to TX to be decoded
 #define HUB_TELEMETRY				// Use FrSkyD Hub format to send telemetry to TX
-#define AFHDS2A_HUB_TELEMETRY		// Use FrSkyD Hub format to send telemetry to TX
+//#define AFHDS2A_HUB_TELEMETRY		// Use FrSkyD Hub format to send telemetry to TX
 #define BAYANG_HUB_TELEMETRY		// Use FrSkyD Hub format to send telemetry to TX
 #define BAYANG_BIKEMIKE_TELEMETRY   // https://github.com/bikemike/H101-acro/tree/telemetry
 #define HUBSAN_HUB_TELEMETRY		// Use FrSkyD Hub format to send telemetry to TX

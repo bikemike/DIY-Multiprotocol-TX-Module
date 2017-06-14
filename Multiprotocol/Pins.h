@@ -56,12 +56,12 @@
 	#endif
 
 	// SDIO
-	#define SOFTWARE_SPI // default is software. comment out to enable hardware spi
+	//#define SOFTWARE_SPI // default is software. comment out to enable hardware spi
 	#ifdef SOFTWARE_SPI
-		#define SDI_pin  5                    //D5 = PD5
-		#define SDI_port PORTD
-		#define SDI_ipr  PIND
-		#define SDI_ddr  DDRD
+		#define SDI_pin  3                    //D5 = PD5
+		#define SDI_port PORTB
+		#define SDI_ipr  PINB
+		#define SDI_ddr  DDRB
 		#ifdef ORANGE_TX
 			#define SDI_on	SDI_port.OUTSET = _BV(SDI_pin)
 			#define SDI_off SDI_port.OUTCLR = _BV(SDI_pin)
@@ -75,9 +75,9 @@
 		#define SDI_output	SDI_ddr |=  _BV(SDI_pin)
 	
 		//SDO
-		#define SDO_pin   6                 //D6 = PD6
-		#define SDO_port  PORTD
-		#define SDO_ipr   PIND
+		#define SDO_pin   4                 //D6 = PD6
+		#define SDO_port  PORTB
+		#define SDO_ipr   PINB
 		#ifdef ORANGE_TX
 			#define SDO_1 (SDO_port.IN & _BV(SDO_pin))
 			#define SDO_0 (SDO_port.IN & _BV(SDO_pin)) == 0x00
@@ -96,9 +96,9 @@
 			#define SCLK_off	SCLK_port.OUTCLR = _BV(SCLK_pin)
 		#else
 		// SCLK
-			#define SCLK_port PORTD
-			#define SCLK_ddr DDRD
-			#define SCLK_pin  4               //D4 = PD4
+			#define SCLK_port PORTB
+			#define SCLK_ddr DDRB
+			#define SCLK_pin  5               //D4 = PD4
 			#define SCLK_output	SCLK_ddr  |=  _BV(SCLK_pin)
 			#define SCLK_on		SCLK_port |=  _BV(SCLK_pin)
 			#define SCLK_off	SCLK_port &= ~_BV(SCLK_pin)
@@ -146,7 +146,7 @@
 	#define CC25_CSN_off	CC25_CSN_port &= ~_BV(CC25_CSN_pin)
 
 	// NRF24L01
-	#define NRF_CSN_pin		0								//D8 = PB0
+	#define NRF_CSN_pin		2								//D8 = PB0
 	#define NRF_CSN_port	PORTB
 	#define NRF_CSN_ddr		DDRB
 	#define NRF_CSN_output	NRF_CSN_ddr  |=  _BV(NRF_CSN_pin)
@@ -218,8 +218,8 @@
 		#define IS_LED_on	(LED_port.OUT & _BV(LED_pin))
 	#else
 		#define LED_pin		5								//D13 = PB5
-		#define LED_port	PORTB
-		#define LED_ddr		DDRB
+		#define LED_port	PORTD
+		#define LED_ddr		DDRD
 		#define LED_on		LED_port |= _BV(LED_pin)
 		#define LED_off		LED_port &= ~_BV(LED_pin)
 		#define LED_toggle	LED_port ^= _BV(LED_pin)
@@ -234,9 +234,9 @@
 		#define IS_BIND_BUTTON_on	( (BIND_port.IN & _BV(BIND_pin)) == 0x00 )
 	#else
 		#define BIND_pin			5						//D13 = PB5
-		#define BIND_port			PORTB
-		#define BIND_ipr			PINB
-		#define BIND_ddr			DDRB
+		#define BIND_port			PORTD
+		#define BIND_ipr			PIND
+		#define BIND_ddr			DDRD
 		#define BIND_SET_INPUT		BIND_ddr &= ~_BV(BIND_pin)
 		#define BIND_SET_OUTPUT		BIND_ddr |=  _BV(BIND_pin)
 		#define BIND_SET_PULLUP		BIND_port |= _BV(BIND_pin)
